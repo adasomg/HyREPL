@@ -3,7 +3,7 @@
 
 (import traceback)
 
-(def workarounds {})
+(setv workarounds {})
 (defmacro def-workaround [match args &rest body]
   `(assoc workarounds ~match (fn ~args ~@body)))
 
@@ -11,14 +11,14 @@
   (hasattr f "__call__"))
 
 (defn get-workaround [code]
-  (let [rv None]
-    (for [w (.keys workarounds)]
-      (when (or (and (callable? w) (w code)) (= w code))
-        (setv rv (get workarounds w))
+  (setv rv None)
+  (for [w (.keys workarounds)]
+    (when (or (and (callable? w) (w code)) (= w code))
+      (setv rv (get workarounds w))
       (break)))
-    (if (none? rv)
+  (if (none? rv)
       (fn [s m] (get m "code"))
-      rv)))
+      rv))
 
 ; Workarounds for Fireplace
 (def-workaround (+ "(do (println \"success\") "
@@ -35,15 +35,15 @@
 (def-workaround (+ "[(symbol (str \"\\n\\b\" (apply str (interleave "
                    "(repeat \"\\n\") (map str (.getStackTrace *e)))) "
                    "\"\\n\\b\\n\")) *3 *2 *1]")
-                [session msg]
-                (let [items []]
-                  (with [session.lock]
-                    (for [i (traceback.extract-tb session.last-traceback)]
-                      (.append items (.format "{}({}:{})"
-                                              (get i 2)
-                                              (first i)
-                                              (second i)))))
-                  (+ "(quote " "[\n\b\n" (.join "\n" items) "\n\b\n nil nil nil]" ")")))
+  [session msg]
+  (setv items [])
+  (with [session.lock]
+    (for [i (traceback.extract-tb session.last-traceback)]
+      (.append items (.format "{}({}:{})"
+                              (get i 2)
+                              (first i)
+                              (second i)))))
+  (+ "(quote " "[\n\b\n" (.join "\n" items) "\n\b\n nil nil nil]" ")"))
 
 (def-workaround (fn [c] (in c ["(*1 1)" "(*2 2)" "(*3 3)"]))
                 [session msg]
@@ -78,4 +78,3 @@
 (def-workaround "(clojure.stacktrace/print-cause-trace *e)"
                 [session msg]
                 "(do (import traceback) (.print_last traceback))")
-

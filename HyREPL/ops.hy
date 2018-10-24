@@ -5,33 +5,32 @@
 
 (import sys)
 
-
-(def ops {})
+(setv ops {})
 
 (defmacro/g! defop [name args desc &rest body]
-  (if-not (instance? (, str HySymbol) name)
-    (macro-error name "Name must be a symbol or a string."))
-  (if-not (instance? hy.models.list.HyList args)
-    (macro-error args "Arguments must be a list."))
-  (if-not (instance? hy.models.dict.HyDict desc)
-    (macro-error desc "Description must be a dictionary."))
-  (let [fn-checked
+  ;; (if-not (instance? (, str HySymbol) name)
+  ;;   (macro-error name "Name must be a symbol or a string."))
+  ;; (if-not (instance? hy.models.list.HyList args)
+  ;;   (macro-error args "Arguments must be a list."))
+  ;; (if-not (instance? hy.models.dict.HyDict desc)
+  ;;   (macro-error desc "Description must be a dictionary."))
+  (setv fn-checked
          `(fn ~args
-            (let [g!failed False]
-              (for [g!r (.keys (.get ~desc "requires" {}))]
-                (unless (in g!r (second ~args))
-                  (.write (first ~args)
-                          {"status" ["done"]
-                           "id" (.get (second ~args) "id")
-                           "missing" (str g!r)} (nth ~args 2))
-                  (setv g!failed True)
-                  (break)))
-              (unless g!failed
-                (do
-                  ~@body))))
-        n (str name)
-        o {:f fn-checked :desc desc}]
-    `(assoc ops ~n ~o)))
+            (setv g!failed False)
+            (for [g!r (.keys (.get ~desc "requires" {}))]
+              (unless (in g!r (second ~args))
+                (.write (first ~args)
+                        {"status" ["done"]
+                         "id" (.get (second ~args) "id")
+                         "missing" (str g!r)} (nth ~args 2))
+                (setv g!failed True)
+                (break)))
+            (unless g!failed
+              (do
+                ~@body))))
+  (setv n (str name))
+  (setv o {:f fn-checked :desc desc})
+  `(assoc ops ~n ~o))
 
 
 (defn find-op [op]
@@ -43,13 +42,13 @@
 
 
 (defop clone [session msg transport]
-       {"doc" "Clones a session"
-       "requires" {}
-       "optional" {"session" "The session to be cloned. If this is left out, the current session is cloned"}
-       "returns" {"new-session" "The ID of the new session"}}
-       (import [HyREPL.session [Session]]) ; Imported here to avoid circ. dependency
-       (let [s (Session)]
-         (.write session {"status" ["done"] "id" (.get msg "id") "new-session" (str s)} transport)))
+  {"doc" "Clones a session"
+   "requires" {}
+   "optional" {"session" "The session to be cloned. If this is left out, the current session is cloned"}
+   "returns" {"new-session" "The ID of the new session"}}
+  (import [HyREPL.session [Session]]) ; Imported here to avoid circ. dependency
+  (setv s (Session))
+  (.write session {"status" ["done"] "id" (.get msg "id") "new-session" (str s)} transport))
 
 
 (defop close [session msg transport]
@@ -91,7 +90,7 @@
                "versions" {"nrepl" (make-version 0 2 7)
                            "java" (make-version)
                            "clojure" (make-version)}
-               "ops" (dict-comp k (:desc v) [(, k v) (.items ops)])
+                "ops" (dfor x ops [x (:desc (get ops x))])
                "session" (.get msg "session")}
                transport))
 

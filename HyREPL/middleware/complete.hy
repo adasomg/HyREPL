@@ -5,11 +5,10 @@
 
 (import
   hy.macros hy.compiler hy.core.language
-  [hy.models.symbol [HySymbol]]
   [hy.completer [Completer]])
 
 (import [HyREPL.ops [ops]])
-(require HyREPL.ops)
+(require [HyREPL.ops [defop]])
 
 (import [HyREPL.middleware.eval [eval-module]])
 
@@ -32,7 +31,7 @@
       (let [(, expr attr) (.group m 1 3)
             expr (.replace expr "_" "-")
             attr (.replace attr "_" "-")
-            obj (eval (HySymbol expr) (. self namespace))
+            obj (eval (symbol expr) (. self namespace))
             words (dir obj)
             n (len attr)
             matches []]
